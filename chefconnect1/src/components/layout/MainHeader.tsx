@@ -1,16 +1,19 @@
 import { useState } from "react";
-import LoginModal from "../auth/LoginModal";
+import { Link, useLocation } from "react-router-dom";
 
-const nav = [
-  "Home",
-  "How It Works",
-  "Reviews",
-  "Event Ideas",
-  "Gift Cards",
-  "Blog",
-  "Be a Chef",
-  "Contact Us",
-  "Login/Signup",
+import AuthModal from "../../features/auth/AuthModal";
+import { useAuth } from "../../features/auth/AuthContext";
+
+type NavItem = { label: string; to: string };
+
+const nav: NavItem[] = [
+  { label: "Home", to: "/" },
+  { label: "How It Works", to: "/#how-it-works" },
+  { label: "Reviews", to: "/#reviews" },
+  { label: "FAQ", to: "/faq" },
+  { label: "About Us", to: "/about" },
+  { label: "Be a Chef", to: "/#be-a-chef" },
+  { label: "Contact Us", to: "/#contact" },
 ];
 
 function PhoneSvg() {
@@ -35,49 +38,86 @@ function MailSvg() {
 }
 
 export default function MainHeader() {
-  const [loginOpen, setLoginOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const location = useLocation();
+  const { user, logout } = useAuth();
+
+  const isActive = (to: string) => {
+    if (to === "/") return location.pathname === "/";
+    if (to.startsWith("/#")) return false;
+    return location.pathname === to;
+  };
 
   return (
     <>
       <header className="header">
         <div className="container headerRow">
-          <div className="brand">
+          <Link to="/" className="brand">
             <div className="brandMark">CS</div>
             <div className="brandText">
               <div className="brandName">ChefConnect</div>
               <div className="brandTag">Private chef booking</div>
             </div>
-          </div>
+          </Link>
 
           <nav className="nav">
             {nav.map((x) =>
-              x === "Login/Signup" ? (
-                <button
-                  key={x}
-                  className="navLink"
-                  style={{ background: "transparent", border: 0, cursor: "pointer" }}
-                  onClick={() => setLoginOpen(true)}
-                >
-                  {x}
-                </button>
-              ) : (
-                <a key={x} className="navLink" href="#">
-                  {x}
+              x.to.startsWith("/#") ? (
+                <a key={x.label} className="navLink" href={x.to}>
+                  {x.label}
                 </a>
+              ) : (
+                <Link
+                  key={x.label}
+                  className={`navLink ${isActive(x.to) ? "navLinkActive" : ""}`}
+                  to={x.to}
+                >
+                  {x.label}
+                </Link>
               )
+            )}
+
+            {user ? (
+              <>
+                <span className="navLink" style={{ fontWeight: 900, color: "#111" }}>
+                  Hi, {user.name}
+                </span>
+
+                <button
+                  className="navLink"
+                  type="button"
+                  style={{ background: "transparent", border: 0, cursor: "pointer" }}
+                  onClick={logout}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                className="navLink"
+                type="button"
+                style={{ background: "transparent", border: 0, cursor: "pointer" }}
+                onClick={() => setAuthOpen(true)}
+              >
+                Login/Signup
+              </button>
             )}
           </nav>
 
           <div className="headerIcons">
-            <button className="iconBtn" aria-label="phone"><PhoneSvg /></button>
-            <button className="iconBtn" aria-label="email"><MailSvg /></button>
+            <button className="iconBtn" aria-label="phone" type="button">
+              <PhoneSvg />
+            </button>
+            <button className="iconBtn" aria-label="email" type="button">
+              <MailSvg />
+            </button>
           </div>
         </div>
 
         <div className="hr-thick" />
       </header>
 
-      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
     </>
   );
 }
